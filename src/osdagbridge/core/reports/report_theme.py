@@ -2,12 +2,35 @@
 # OsdagBridge — Report Theme
 # LaTeX preamble: document class, packages, colors, table spacing, margins,
 # custom commands. Single source of truth for report styling.
-# Color: osdagGreen = #91B014
 # =============================================================================
 
 from osdagbridge.core.reports.report_utils import _tex
 
+# ── Brand color ─────────────────────────────────────────────────────────────
 OSDAG_GREEN_HEX = "91B014"
+
+# ── Page margins ─────────────────────────────────────────────────────────────
+PAGE_MARGIN = "1in"
+
+# ── Table spacing (default, used across most chapters) ──────────────────────
+TABCOLSEP = "6pt"
+ARRAYSTRETCH = "1.12"
+ARRAYRULEWIDTH = "0.5pt"
+EXTRAROWHEIGHT = "0.6pt"
+LTPRE = "0pt"
+LTPOST = "6pt"
+
+# ── Table spacing (dense variants, reused by several chapters' wide tables) ──
+TABCOLSEP_DENSE = "3.5pt"   # chap7, chap8
+TABCOLSEP_COMPACT = "4pt"   # chap2, chap5
+
+# ── Header / footer ──────────────────────────────────────────────────────────
+HEADRULE_HEIGHT = "1pt"
+FOOTER_ORG_LINE = r"Osdag $|$ FOSSEE $|$ Indian Institute of Technology Bombay"
+FOOTRULE_GAP = "6pt"
+SD_FOOTNOTE_VSPACE = "-20pt"
+SD_FOOTNOTE_GAP = "4pt"
+NO_FOOTNOTE_VSPACE = "-8pt"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -23,7 +46,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \documentclass[12pt,a4paper]{report}
 
 % Packages
-\usepackage[a4paper, margin=1in]{geometry}
+\usepackage[a4paper, margin=""" + PAGE_MARGIN + r"""]{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -60,13 +83,13 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \numberwithin{table}{chapter}
 \numberwithin{figure}{chapter}
 % Table layout and spacing: consistent padding, row height, and longtable pre/post skips
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.12}
-\setlength{\LTpre}{0pt}
-\setlength{\LTpost}{6pt}
+\setlength{\tabcolsep}{""" + TABCOLSEP + r"""}
+\renewcommand{\arraystretch}{""" + ARRAYSTRETCH + r"""}
+\setlength{\LTpre}{""" + LTPRE + r"""}
+\setlength{\LTpost}{""" + LTPOST + r"""}
 % Table rules (outline thickness) and small extra row height for clarity
-\setlength{\arrayrulewidth}{0.5pt}
-\setlength{\extrarowheight}{0.6pt}
+\setlength{\arrayrulewidth}{""" + ARRAYRULEWIDTH + r"""}
+\setlength{\extrarowheight}{""" + EXTRAROWHEIGHT + r"""}
 
 % Prevent tables from overflowing past the page bottom:
 % if fewer than 5 baseline-skips remain, break to the next page first.
@@ -79,44 +102,44 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
   \fancyhf{}
   \fancyhead[L]{""" + pn + r""" $|$ """ + jn + r"""}
   \fancyhead[R]{""" + rd + r""" $|$ """ + rv + r"""}
-  \fancyfoot[L]{Osdag $|$ FOSSEE $|$ Indian Institute of Technology Bombay}
+  \fancyfoot[L]{""" + FOOTER_ORG_LINE + r"""}
   \fancyfoot[R]{Page \thepage\ of \pageref{LastPage}}
-  \renewcommand{\headrule}{\color{osdagGreen}\hrule width\headwidth height 1pt \vspace{2pt}}
+  \renewcommand{\headrule}{\color{osdagGreen}\hrule width\headwidth height """ + HEADRULE_HEIGHT + r""" \vspace{2pt}}
   \renewcommand{\footrule}{%
     \ifbool{hasSDonPage}{%
-      \vspace{-20pt}%
+      \vspace{""" + SD_FOOTNOTE_VSPACE + r"""}%
       \hbox to \headwidth{\textcolor{black}{\footnotesize\textit{* Software default value}}\hfil}%
-      \vspace{4pt}%
+      \vspace{""" + SD_FOOTNOTE_GAP + r"""}%
     }{%
-      \vspace{-8pt}%
+      \vspace{""" + NO_FOOTNOTE_VSPACE + r"""}%
     }%
-    \color{osdagGreen}\hrule width\headwidth height 1pt \vspace{6pt}%
+    \color{osdagGreen}\hrule width\headwidth height """ + HEADRULE_HEIGHT + r""" \vspace{""" + FOOTRULE_GAP + r"""}%
   }
 }
 \fancypagestyle{plain}{
   \fancyhf{}
   \fancyhead[L]{""" + pn + r""" $|$ """ + jn + r"""}
   \fancyhead[R]{""" + rd + r""" $|$ """ + rv + r"""}
-  \fancyfoot[L]{Osdag $|$ FOSSEE $|$ Indian Institute of Technology Bombay}
+  \fancyfoot[L]{""" + FOOTER_ORG_LINE + r"""}
   \fancyfoot[R]{Page \thepage\ of \pageref{LastPage}}
-  \renewcommand{\headrule}{\color{osdagGreen}\hrule width\headwidth height 1pt \vspace{2pt}}
+  \renewcommand{\headrule}{\color{osdagGreen}\hrule width\headwidth height """ + HEADRULE_HEIGHT + r""" \vspace{2pt}}
   \renewcommand{\footrule}{%
     \ifbool{hasSDonPage}{%
-      \vspace{-20pt}%
+      \vspace{""" + SD_FOOTNOTE_VSPACE + r"""}%
       \hbox to \headwidth{\textcolor{black}{\footnotesize\textit{* Software default value}}\hfil}%
-      \vspace{4pt}%
+      \vspace{""" + SD_FOOTNOTE_GAP + r"""}%
     }{%
-      \vspace{-8pt}%
+      \vspace{""" + NO_FOOTNOTE_VSPACE + r"""}%
     }%
-    \color{osdagGreen}\hrule width\headwidth height 1pt \vspace{6pt}%
+    \color{osdagGreen}\hrule width\headwidth height """ + HEADRULE_HEIGHT + r""" \vspace{""" + FOOTRULE_GAP + r"""}%
   }
 }
 \fancypagestyle{firstpage}{
   \fancyhf{}
   \renewcommand{\headrulewidth}{0pt}
-  \fancyfoot[L]{Osdag $|$ FOSSEE $|$ Indian Institute of Technology Bombay}
+  \fancyfoot[L]{""" + FOOTER_ORG_LINE + r"""}
   \fancyfoot[R]{Page \thepage\ of \pageref{LastPage}}
-  \renewcommand{\footrule}{\vspace{-8pt}\color{osdagGreen}\hrule width\headwidth height 1pt \vspace{6pt}}
+  \renewcommand{\footrule}{\vspace{""" + NO_FOOTNOTE_VSPACE + r"""}\color{osdagGreen}\hrule width\headwidth height """ + HEADRULE_HEIGHT + r""" \vspace{""" + FOOTRULE_GAP + r"""}}
 }
 \pagestyle{main}
 \setstretch{1.15}

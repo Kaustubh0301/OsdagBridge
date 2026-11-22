@@ -142,6 +142,7 @@ from osdagbridge.core.utils.common import (
 )
 
 from osdagbridge.core.reports.report_utils import _tex, _render_value, get_girder_entries
+from osdagbridge.core.reports.report_theme import TABCOLSEP_COMPACT
 
 if TYPE_CHECKING:
     pass
@@ -1408,7 +1409,7 @@ Cross bracing between adjacent plate girders provides lateral stability during c
 
 \vspace{0.4em}
 \noindent
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{""" + TABCOLSEP_COMPACT + r"""}
 \setlength\LTleft{0pt}
 \setlength\LTright{\fill}
 
@@ -1452,7 +1453,7 @@ End diaphragms at the supports transfer transverse loads to the bearings, restra
 
 \vspace{0.4em}
 \noindent
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{""" + TABCOLSEP_COMPACT + r"""}
 \setlength{\LTleft}{0pt}
 \setlength{\LTright}{\fill}
 
