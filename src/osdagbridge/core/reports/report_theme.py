@@ -25,12 +25,21 @@ TABCOLSEP_DENSE = "3.5pt"   # chap7, chap8
 TABCOLSEP_COMPACT = "4pt"   # chap2, chap5
 
 # ── Header / footer ──────────────────────────────────────────────────────────
+# The footnote line ("* Software default value") is reserved on every page,
+# whether shown or blanked out with \hphantom, so the footer occupies the
+# same height on every page instead of toggling between two vspace amounts
+# depending on page content. FOOTSKIP must be wide enough to hold that
+# reserved line plus the rule and page-number line below it.
 HEADRULE_HEIGHT = "1pt"
 FOOTER_ORG_LINE = r"Osdag $|$ FOSSEE $|$ Indian Institute of Technology Bombay"
 FOOTRULE_GAP = "6pt"
-SD_FOOTNOTE_VSPACE = "-20pt"
 SD_FOOTNOTE_GAP = "4pt"
+FOOTSKIP = "40pt"
 NO_FOOTNOTE_VSPACE = "-8pt"
+
+# Minimum vertical space required before starting a table, so a table never
+# begins with only a few lines left at the bottom of a page.
+LONGTABLE_NEEDSPACE = "8\\baselineskip"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -46,7 +55,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \documentclass[12pt,a4paper]{report}
 
 % Packages
-\usepackage[a4paper, margin=""" + PAGE_MARGIN + r"""]{geometry}
+\usepackage[a4paper, margin=""" + PAGE_MARGIN + r""", footskip=""" + FOOTSKIP + r"""]{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -91,10 +100,10 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \setlength{\arrayrulewidth}{""" + ARRAYRULEWIDTH + r"""}
 \setlength{\extrarowheight}{""" + EXTRAROWHEIGHT + r"""}
 
-% Prevent tables from overflowing past the page bottom:
-% if fewer than 5 baseline-skips remain, break to the next page first.
-\BeforeBeginEnvironment{table}{\needspace{5\baselineskip}}
-\BeforeBeginEnvironment{longtable}{\needspace{5\baselineskip}}
+% Prevent tables from starting with only a few lines left at the bottom of
+% a page: if less than LONGTABLE_NEEDSPACE remains, break to the next page first.
+\BeforeBeginEnvironment{table}{\needspace{""" + LONGTABLE_NEEDSPACE + r"""}}
+\BeforeBeginEnvironment{longtable}{\needspace{""" + LONGTABLE_NEEDSPACE + r"""}}
 
 \definecolor{osdagGreen}{HTML}{""" + OSDAG_GREEN_HEX + r"""}
 
@@ -106,13 +115,10 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
   \fancyfoot[R]{Page \thepage\ of \pageref{LastPage}}
   \renewcommand{\headrule}{\color{osdagGreen}\hrule width\headwidth height """ + HEADRULE_HEIGHT + r""" \vspace{2pt}}
   \renewcommand{\footrule}{%
-    \ifbool{hasSDonPage}{%
-      \vspace{""" + SD_FOOTNOTE_VSPACE + r"""}%
-      \hbox to \headwidth{\textcolor{black}{\footnotesize\textit{* Software default value}}\hfil}%
-      \vspace{""" + SD_FOOTNOTE_GAP + r"""}%
-    }{%
-      \vspace{""" + NO_FOOTNOTE_VSPACE + r"""}%
-    }%
+    \hbox to \headwidth{\textcolor{black}{\footnotesize\textit{%
+      \ifbool{hasSDonPage}{* Software default value}{\hphantom{* Software default value}}%
+    }}\hfil}%
+    \vspace{""" + SD_FOOTNOTE_GAP + r"""}%
     \color{osdagGreen}\hrule width\headwidth height """ + HEADRULE_HEIGHT + r""" \vspace{""" + FOOTRULE_GAP + r"""}%
   }
 }
@@ -124,13 +130,10 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
   \fancyfoot[R]{Page \thepage\ of \pageref{LastPage}}
   \renewcommand{\headrule}{\color{osdagGreen}\hrule width\headwidth height """ + HEADRULE_HEIGHT + r""" \vspace{2pt}}
   \renewcommand{\footrule}{%
-    \ifbool{hasSDonPage}{%
-      \vspace{""" + SD_FOOTNOTE_VSPACE + r"""}%
-      \hbox to \headwidth{\textcolor{black}{\footnotesize\textit{* Software default value}}\hfil}%
-      \vspace{""" + SD_FOOTNOTE_GAP + r"""}%
-    }{%
-      \vspace{""" + NO_FOOTNOTE_VSPACE + r"""}%
-    }%
+    \hbox to \headwidth{\textcolor{black}{\footnotesize\textit{%
+      \ifbool{hasSDonPage}{* Software default value}{\hphantom{* Software default value}}%
+    }}\hfil}%
+    \vspace{""" + SD_FOOTNOTE_GAP + r"""}%
     \color{osdagGreen}\hrule width\headwidth height """ + HEADRULE_HEIGHT + r""" \vspace{""" + FOOTRULE_GAP + r"""}%
   }
 }
