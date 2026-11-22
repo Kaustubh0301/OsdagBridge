@@ -118,7 +118,7 @@ from osdagbridge.core.utils.common import (
     KEY_TL_TEMP_RISE
 )
 
-from osdagbridge.core.reports.report_utils import _tex
+from osdagbridge.core.reports.report_utils import _tex, compute_overall_ur_summary, build_ur_summary_chart
 from osdagbridge.core.reports.report_theme import preamble
 from .executive_summary import executive_summary
 from .chap1 import ch1_project_info
@@ -699,6 +699,7 @@ _FIGURE_MAP = [
     ('bm_envelope',           'bm_envelope.png'),
     ('sf_envelope',           'sf_envelope.png'),
     ('defl_ll',               'defl_ll.png'),
+    ('ur_summary_chart',      'ur_summary_chart.png'),
 ]
 
 def generate_report(payload, request):
@@ -771,6 +772,20 @@ def generate_report(payload, request):
             bridge = ReportDataBridge(payload.output_dict, payload.inputs, payload)
             span_m = float(payload.inputs.get(KEY_SPAN, 0) or 0)
 
+            # Section 5.5 utilization-ratio summary chart — built here (not
+            # upstream in cad_generator) since it only needs the same
+            # design-check data Table 5.22 already reads from output_dict.
+            try:
+                ur_summary = compute_overall_ur_summary(bridge)
+                chart_bytes = build_ur_summary_chart(ur_summary)
+                if chart_bytes:
+                    chart_path = os.path.join(tmp_images, 'ur_summary_chart.png')
+                    with open(chart_path, 'wb') as fh:
+                        fh.write(chart_bytes)
+                    fig_paths['ur_summary_chart'] = chart_path.replace('\\', '/')
+            except Exception as exc:
+                logger.warning("UR summary chart generation failed: %s", exc)
+
             doc_parts = []
             doc_parts.append(preamble(payload.metadata.project_name, payload.metadata.job_number, payload.metadata.report_date, payload.metadata.subtitle or 'Rev 0'))
             doc_parts.append(title_page(payload.metadata, osdag_logo_latex, org_logo_latex))
@@ -792,7 +807,7 @@ def generate_report(payload, request):
             if 'analysis' in secs:
                 doc_parts.append(ch4_analysis(payload.analysis_summary, fig_paths, bridge, span_m))
             if 'design_checks' in secs:
-                doc_parts.append(ch5_design_checks(payload.design_checks, bridge))
+                doc_parts.append(ch5_design_checks(payload.design_checks, bridge, fig_paths))
             if 'drawings' in secs and payload.options.include_figures:
                 doc_parts.append(ch6_drawings(fig_paths))
 

@@ -141,12 +141,12 @@ from osdagbridge.core.utils.common import (
     KEY_UTIL_SHEAR
 )
 
-from osdagbridge.core.reports.report_utils import _tex, _render_value, get_girder_entries
+from osdagbridge.core.reports.report_utils import _tex, _render_value, get_girder_entries, _fig_embed
 from osdagbridge.core.reports.report_theme import TABCOLSEP_COMPACT
 
 if TYPE_CHECKING:
     pass
-def ch5_design_checks(checks_data, bridge) -> str:
+def ch5_design_checks(checks_data, bridge, fig_paths=None) -> str:
     """Chapter 5 — Design Checks.
 
     Parameters
@@ -1641,6 +1641,10 @@ End diaphragms at the supports transfer transverse loads to the bearings, restra
 """ + t522_content + r"""
 \end{longtable}
 \noindent\textit{Note: UR = Demand / Capacity. All values $\leq 1.0$ indicate passing checks. The governing check for each component is highlighted in the individual design check sections above.}
+
+\vspace{1em}
+""" + _fig_embed((fig_paths or {}).get('ur_summary_chart'),
+                  'Governing Utilization Ratio by Component (red dashed line marks UR = 1.0; bars above it fail).') + r"""
 
 """
 
