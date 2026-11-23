@@ -1,7 +1,8 @@
 from osdagbridge.core.reports.report_theme import TABCOLSEP_DENSE
+from osdagbridge.core.reports.report_utils import _fig_embed
 
 
-def ch7_quantities(input_dict):
+def ch7_quantities(input_dict, fig_paths=None):
     return r"""
 \chapter{Material Take-off \& Quantity Summary}
 \label{ch:material-takeoff}
@@ -36,6 +37,15 @@ def ch7_quantities(input_dict):
 6 & Crash Barrier & """ + str(input_dict.get("crash_barrier_vol_formula", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_qty", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_vol_total", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_wt_single", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_wt_total", "N.A.")) + r""" \\
 \hline
 \end{longtable}
+\endgroup
+
+\vspace{1em}
+""" + _fig_embed((fig_paths or {}).get('steel_tonnage_chart'),
+                  'Structural Steel Tonnage by Component.') + r"""
+
+\vspace{1em}
+""" + _fig_embed((fig_paths or {}).get('concrete_rebar_chart'),
+                  'Concrete Volume vs. Reinforcement Steel Weight (Deck Slab).') + r"""
 """
 
 

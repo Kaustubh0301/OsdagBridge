@@ -118,7 +118,11 @@ from osdagbridge.core.utils.common import (
     KEY_TL_TEMP_RISE
 )
 
-from osdagbridge.core.reports.report_utils import _tex, compute_overall_ur_summary, build_ur_summary_chart
+from osdagbridge.core.reports.report_utils import (
+    _tex, compute_overall_ur_summary, build_ur_summary_chart,
+    compute_steel_tonnage_summary, compute_concrete_rebar_summary,
+    build_steel_tonnage_chart, build_concrete_rebar_chart,
+)
 from osdagbridge.core.reports.report_theme import preamble
 from .executive_summary import executive_summary
 from .chap1 import ch1_project_info
@@ -768,6 +772,29 @@ def generate_report(payload, request):
             quantities = calculate_material_quantities(payload.inputs, payload.output_dict)
             payload.inputs.update(quantities)
 
+            # Chapter 7 material quantity charts — built from the same
+            # `quantities` dict Table 7.1 (Bill of Materials) reads from.
+            try:
+                steel_tonnage = compute_steel_tonnage_summary(quantities)
+                chart_bytes = build_steel_tonnage_chart(steel_tonnage)
+                if chart_bytes:
+                    chart_path = os.path.join(tmp_images, 'steel_tonnage_chart.png')
+                    with open(chart_path, 'wb') as fh:
+                        fh.write(chart_bytes)
+                    fig_paths['steel_tonnage_chart'] = chart_path.replace('\\', '/')
+            except Exception as exc:
+                logger.warning("Steel tonnage chart generation failed: %s", exc)
+            try:
+                concrete_rebar = compute_concrete_rebar_summary(quantities)
+                chart_bytes = build_concrete_rebar_chart(concrete_rebar)
+                if chart_bytes:
+                    chart_path = os.path.join(tmp_images, 'concrete_rebar_chart.png')
+                    with open(chart_path, 'wb') as fh:
+                        fh.write(chart_bytes)
+                    fig_paths['concrete_rebar_chart'] = chart_path.replace('\\', '/')
+            except Exception as exc:
+                logger.warning("Concrete/rebar chart generation failed: %s", exc)
+
             # ── Assemble LaTeX document (fig_paths now has tmp_dir paths) ──
             bridge = ReportDataBridge(payload.output_dict, payload.inputs, payload)
             span_m = float(payload.inputs.get(KEY_SPAN, 0) or 0)
@@ -811,7 +838,7 @@ def generate_report(payload, request):
             if 'drawings' in secs and payload.options.include_figures:
                 doc_parts.append(ch6_drawings(fig_paths))
 
-            doc_parts.append(ch7_quantities(payload.inputs))
+            doc_parts.append(ch7_quantities(payload.inputs, fig_paths))
 
             mode = str(payload.inputs.get(KEY_DESIGN_MODE, "Optimized")).strip().lower()
             is_custom = mode in {"custom", "customized"}

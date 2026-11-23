@@ -301,3 +301,143 @@ def build_ur_summary_chart(ur_values: dict):
     return buf.read()
 
 
+# Order and labels for the Chapter 7 steel tonnage chart. End Diaphragms has
+# no entry in Table 7.1's BOQ (calculate_material_quantities never computes
+# an end-diaphragm steel weight), so it always shows as missing data.
+STEEL_TONNAGE_COMPONENTS = ("Girders", "Cross\nBracing", "End\nDiaphragms")
+
+
+def _quantity_float(quantities: dict, key: str):
+    v = quantities.get(key)
+    try:
+        return float(v) if v not in (None, "", "N.A.") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def compute_steel_tonnage_summary(quantities: dict) -> dict:
+    """Structural steel tonnage by component, read from the same `quantities`
+    dict Table 7.1 (Bill of Materials) is built from in chap7.py.
+
+    Returns {component_name: float | None}, keyed by STEEL_TONNAGE_COMPONENTS.
+    """
+    girders = _quantity_float(quantities, "steel_girders_wt_total")
+    bracing_parts = [
+        _quantity_float(quantities, "bracing_top_wt_total"),
+        _quantity_float(quantities, "bracing_bot_wt_total"),
+        _quantity_float(quantities, "bracing_diag_wt_total"),
+    ]
+    bracing_vals = [v for v in bracing_parts if v is not None]
+    cross_bracing = sum(bracing_vals) if bracing_vals else None
+    end_diaphragms = None  # not tracked separately in the BOQ
+    return dict(zip(STEEL_TONNAGE_COMPONENTS, (girders, cross_bracing, end_diaphragms)))
+
+
+def compute_concrete_rebar_summary(quantities: dict) -> dict:
+    """Concrete deck volume and reinforcement steel weight, read from the
+    same `quantities` dict Table 7.1 is built from.
+
+    Returns {"concrete_m3": float | None, "rebar_mt": float | None}.
+    """
+    return {
+        "concrete_m3": _quantity_float(quantities, "concrete_deck_vol_total"),
+        "rebar_mt": _quantity_float(quantities, "rebar_deck_wt_total"),
+    }
+
+
+def build_steel_tonnage_chart(tonnage: dict):
+    """Render the Chapter 7 steel-tonnage-by-component bar chart to PNG bytes.
+
+    Returns None (caller shows the standard placeholder) if every component
+    is missing.
+    """
+    if all(v is None for v in tonnage.values()):
+        return None
+
+    import io
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from osdagbridge.core.reports.report_theme import OSDAG_GREEN_HEX
+
+    bar_color = "#" + OSDAG_GREEN_HEX
+    labels = list(STEEL_TONNAGE_COMPONENTS)
+    values = [tonnage.get(lbl) for lbl in labels]
+
+    fig, ax = plt.subplots(figsize=(6.0, 3.6))
+    for i, v in enumerate(values):
+        if v is None:
+            ax.text(i, 0.03, "N/A", ha="center", va="bottom", fontsize=9, color="dimgray")
+            continue
+        ax.bar(i, v, width=0.55, color=bar_color, edgecolor="black", linewidth=0.6)
+        ax.text(i, v + 0.02 * max([x for x in values if x is not None]), f"{v:.2f}",
+                ha="center", va="bottom", fontsize=9)
+
+    ax.set_xticks(range(len(labels)))
+    ax.set_xticklabels(labels, fontsize=9)
+    ax.set_ylabel("Structural Steel (MT)")
+    y_top = max([v for v in values if v is not None] + [1.0]) * 1.2
+    ax.set_ylim(0, y_top)
+    ax.grid(axis="y", linestyle=":", linewidth=0.5, alpha=0.6)
+    fig.tight_layout()
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=150, facecolor="white")
+    plt.close(fig)
+    buf.seek(0)
+    return buf.read()
+
+
+def build_concrete_rebar_chart(summary: dict):
+    """Render the Chapter 7 concrete-volume-vs-reinforcement-weight bar
+    chart to PNG bytes (two bars, each on its own axis since the units
+    differ). Returns None (standard placeholder) if both are missing.
+    """
+    concrete_m3 = summary.get("concrete_m3")
+    rebar_mt = summary.get("rebar_mt")
+    if concrete_m3 is None and rebar_mt is None:
+        return None
+
+    import io
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from osdagbridge.core.reports.report_theme import OSDAG_GREEN_HEX
+
+    concrete_color = "#" + OSDAG_GREEN_HEX
+    rebar_color = "#555555"
+
+    fig, ax1 = plt.subplots(figsize=(5.0, 3.6))
+    ax2 = ax1.twinx()
+
+    if concrete_m3 is not None:
+        ax1.bar(0, concrete_m3, width=0.5, color=concrete_color, edgecolor="black", linewidth=0.6)
+        ax1.text(0, concrete_m3 + 0.02 * concrete_m3, f"{concrete_m3:.2f}", ha="center", va="bottom", fontsize=9)
+    else:
+        ax1.text(0, 0.03, "N/A", ha="center", va="bottom", fontsize=9, color="dimgray")
+
+    if rebar_mt is not None:
+        ax2.bar(1, rebar_mt, width=0.5, color=rebar_color, edgecolor="black", linewidth=0.6)
+        ax2.text(1, rebar_mt + 0.02 * rebar_mt, f"{rebar_mt:.2f}", ha="center", va="bottom", fontsize=9)
+    else:
+        ax2.text(1, 0.03, "N/A", ha="center", va="bottom", fontsize=9, color="dimgray")
+
+    ax1.set_xticks([0, 1])
+    ax1.set_xticklabels(["Concrete\n(Deck Slab)", "Reinforcement\nSteel"], fontsize=9)
+    ax1.set_ylabel("Concrete Volume (m³)", color=concrete_color)
+    ax2.set_ylabel("Reinforcement Weight (MT)", color=rebar_color)
+    ax1.set_ylim(0, (concrete_m3 or 1.0) * 1.2)
+    ax2.set_ylim(0, (rebar_mt or 1.0) * 1.2)
+    ax1.tick_params(axis="y", labelcolor=concrete_color)
+    ax2.tick_params(axis="y", labelcolor=rebar_color)
+    fig.tight_layout()
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=150, facecolor="white")
+    plt.close(fig)
+    buf.seek(0)
+    return buf.read()
+
+
